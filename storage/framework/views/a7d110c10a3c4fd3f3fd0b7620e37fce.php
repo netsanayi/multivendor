@@ -47,8 +47,14 @@
                         <?php $__empty_1 = true; $__currentLoopData = $banners; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $banner): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                         <div class="col-md-4 mb-4">
                             <div class="card">
-                                <img src="<?php echo e($banner->image->url); ?>" class="card-img-top" alt="<?php echo e($banner->name); ?>" 
-                                     style="height: 200px; object-fit: cover;">
+                                <?php if($banner->image): ?>
+                                    <img src="<?php echo e($banner->image->url); ?>" class="card-img-top" alt="<?php echo e($banner->name); ?>" 
+                                         style="height: 200px; object-fit: cover;">
+                                <?php else: ?>
+                                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                        <i class="fas fa-image fa-3x text-muted"></i>
+                                    </div>
+                                <?php endif; ?>
                                 <div class="card-body">
                                     <h5 class="card-title"><?php echo e($banner->name); ?></h5>
                                     <?php if($banner->link): ?>

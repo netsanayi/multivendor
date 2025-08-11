@@ -67,9 +67,12 @@ class AddressController extends Controller
             'tax_no' => 'required_if:company_type,corporate|nullable|string|max:50',
             'tc_id_no' => 'required_if:company_type,individual|nullable|string|size:11',
             'status' => 'required|boolean',
+            'user_id' => 'nullable|exists:users,id',
         ]);
 
-        $validated['user_id'] = $request->user_id ?? auth()->id();
+        if (!isset($validated['user_id'])) {
+            $validated['user_id'] = auth()->id();
+        }
 
         DB::beginTransaction();
         try {

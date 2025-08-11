@@ -49,8 +49,14 @@
                         @forelse($banners as $banner)
                         <div class="col-md-4 mb-4">
                             <div class="card">
-                                <img src="{{ $banner->image->url }}" class="card-img-top" alt="{{ $banner->name }}" 
-                                     style="height: 200px; object-fit: cover;">
+                                @if($banner->image)
+                                    <img src="{{ $banner->image->url }}" class="card-img-top" alt="{{ $banner->name }}" 
+                                         style="height: 200px; object-fit: cover;">
+                                @else
+                                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                        <i class="fas fa-image fa-3x text-muted"></i>
+                                    </div>
+                                @endif
                                 <div class="card-body">
                                     <h5 class="card-title">{{ $banner->name }}</h5>
                                     @if($banner->link)

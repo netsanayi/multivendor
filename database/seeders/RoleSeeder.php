@@ -19,6 +19,7 @@ class RoleSeeder extends Seeder
         // Create roles
         $superAdmin = Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
         $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $editor = Role::firstOrCreate(['name' => 'editor', 'guard_name' => 'web']);
         $vendor = Role::firstOrCreate(['name' => 'vendor', 'guard_name' => 'web']);
         $customer = Role::firstOrCreate(['name' => 'customer', 'guard_name' => 'web']);
 
@@ -96,6 +97,20 @@ class RoleSeeder extends Seeder
             'wishlists.view',
             'wishlists.create',
             'wishlists.delete',
+            
+            // Blog management
+            'blogs.view',
+            'blogs.create',
+            'blogs.edit',
+            'blogs.delete',
+            'blogs.publish',
+            
+            // Address management
+            'addresses.view',
+            'addresses.create',
+            'addresses.edit',
+            'addresses.delete',
+            'addresses.update',
         ];
 
         // Create permissions
@@ -142,6 +157,11 @@ class RoleSeeder extends Seeder
             'tickets.manage',
             'messages.view',
             'messages.send',
+            'addresses.view',
+            'addresses.create',
+            'addresses.edit',
+            'addresses.delete',
+            'addresses.update',
         ]);
         
         // Vendor permissions
@@ -159,6 +179,20 @@ class RoleSeeder extends Seeder
             'messages.send',
         ]);
         
+        // Editor permissions
+        $editor->givePermissionTo([
+            'products.view',
+            'categories.view',
+            'brands.view',
+            'dashboard.view',
+            'blogs.view',
+            'blogs.create',
+            'blogs.edit',
+            'blogs.publish',
+            'messages.view',
+            'messages.send',
+        ]);
+        
         // Customer permissions
         $customer->givePermissionTo([
             'products.view',
@@ -172,6 +206,10 @@ class RoleSeeder extends Seeder
             'wishlists.view',
             'wishlists.create',
             'wishlists.delete',
+            'addresses.view',
+            'addresses.create',
+            'addresses.edit',
+            'addresses.delete',
         ]);
     }
 }

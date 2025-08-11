@@ -103,11 +103,20 @@ Route::prefix('admin')
             Route::get('/{activity}', [\App\Modules\ActivityLog\Controllers\ActivityLogController::class, 'show'])->name('show');
         });
         
+        // Notifications (Admin)
+        Route::prefix('notifications')->name('notifications.')->group(function () {
+            Route::get('/', [\App\Modules\Notifications\Controllers\NotificationController::class, 'index'])->name('index');
+            Route::get('/settings', [\App\Modules\Notifications\Controllers\NotificationController::class, 'settings'])->name('settings');
+            Route::post('/settings', [\App\Modules\Notifications\Controllers\NotificationController::class, 'updateSettings'])->name('settings.update');
+        });
+        
         // Settings
         Route::get('settings', [\App\Modules\Settings\Controllers\SettingController::class, 'index'])
             ->name('settings.index');
         Route::post('settings', [\App\Modules\Settings\Controllers\SettingController::class, 'update'])
             ->name('settings.update');
+        Route::post('settings/clear-cache', [\App\Modules\Settings\Controllers\SettingController::class, 'clearCache'])
+            ->name('settings.clear-cache');
         
         // Image Upload Route
         Route::post('upload/image', function(\Illuminate\Http\Request $request) {

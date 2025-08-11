@@ -116,6 +116,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(\App\Modules\Blogs\Models\Blog::class, 'author_id');
     }
+    
+    /**
+     * Get the notification settings for the user.
+     */
+    public function notificationSettings()
+    {
+        return $this->hasOne(\App\Modules\Notifications\Models\NotificationSettings::class, 'user_id');
+    }
 
     /**
      * Scope a query to only include active users.

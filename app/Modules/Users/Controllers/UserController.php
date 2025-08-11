@@ -17,7 +17,7 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::with(['role', 'defaultCurrency']);
+        $query = User::with(['roles', 'defaultCurrency']);
 
         // Arama
         if ($request->has('search')) {
@@ -32,7 +32,9 @@ class UserController extends Controller
 
         // Rol filtresi
         if ($request->has('role_id')) {
-            $query->where('role_id', $request->get('role_id'));
+            $query->whereHas('roles', function($q) use ($request) {
+                $q->where('roles.id', $request->get('role_id'));
+            });
         }
 
         // Durum filtresi
@@ -44,7 +46,7 @@ class UserController extends Controller
         $query->orderBy('created_at', 'desc');
 
         $users = $query->paginate(20);
-        $roles = Role::active()->get();
+        $roles = Role::orderBy('name')->get();
 
         return view('users.index', compact('users', 'roles'));
     }
@@ -54,8 +56,18 @@ class UserController extends Controller
      */
     public function create()
     {
-        $roles = Role::active()->orderBy('name')->get();
-        $currencies = Currency::active()->orderBy('name')->get();
+        // Geçici çözüm: is_active kolonu yoksa tüm rolleri getir
+        try {
+            $roles = Role::where('is_active', true)->orderBy('name')->get();
+        } catch (\Exception $e) {
+            $roles = Role::orderBy('name')->get();
+        }
+        
+        try {
+            $currencies = Currency::where('is_active', true)->orderBy('name')->get();
+        } catch (\Exception $e) {
+            $currencies = Currency::orderBy('name')->get();
+        }
 
         return view('users.create', compact('roles', 'currencies'));
     }
@@ -109,7 +121,7 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        $user->load(['role', 'defaultCurrency', 'addresses', 'vendorProducts']);
+        $user->load(['roles', 'defaultCurrency', 'addresses', 'vendorProducts']);
         
         return view('users.show', compact('user'));
     }
@@ -119,8 +131,18 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        $roles = Role::active()->orderBy('name')->get();
-        $currencies = Currency::active()->orderBy('name')->get();
+        // Geçici çözüm: is_active kolonu yoksa tüm rolleri getir
+        try {
+            $roles = Role::where('is_active', true)->orderBy('name')->get();
+        } catch (\Exception $e) {
+            $roles = Role::orderBy('name')->get();
+        }
+        
+        try {
+            $currencies = Currency::where('is_active', true)->orderBy('name')->get();
+        } catch (\Exception $e) {
+            $currencies = Currency::orderBy('name')->get();
+        }
 
         return view('users.edit', compact('user', 'roles', 'currencies'));
     }

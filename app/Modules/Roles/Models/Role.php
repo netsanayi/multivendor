@@ -46,7 +46,11 @@ class Role extends SpatieRole
      */
     public function scopeActive($query)
     {
-        return $query->where('is_active', true);
+        // Check if is_active column exists
+        if (\Schema::hasColumn('roles', 'is_active')) {
+            return $query->where('is_active', true);
+        }
+        return $query;
     }
 
     /**

@@ -351,7 +351,7 @@ class NotificationService
             ->where('user_id', $user->id)
             ->select(
                 DB::raw('COUNT(*) as total'),
-                DB::raw('SUM(CASE WHEN is_success = 1 THEN 1 ELSE 0 END) as successful'),
+                DB::raw('SUM(CASE WHEN is_success = true THEN 1 ELSE 0 END) as successful'),
                 DB::raw('SUM(CASE WHEN read_at IS NOT NULL THEN 1 ELSE 0 END) as read'),
                 DB::raw('SUM(CASE WHEN clicked_at IS NOT NULL THEN 1 ELSE 0 END) as clicked')
             )

@@ -13,17 +13,34 @@ class VendorProduct extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'relation_id',
-        'user_relation_id',
+        'product_id',
+        'vendor_id',
         'price',
+        'compare_price',
+        'cost',
+        'quantity',
+        'min_quantity',
+        'max_quantity',
+        'sku',
+        'barcode',
         'currency_id',
         'condition',
-        'stock_quantity',
-        'min_sale_quantity',
-        'max_sale_quantity',
+        'availability',
+        'is_active',
+        'is_featured',
+        'is_digital',
+        'is_virtual',
+        'requires_shipping',
+        'track_inventory',
+        'allow_backorders',
+        'commission_rate',
+        'commission_type',
         'discount',
         'images',
-        'status',
+        'notes',
+        'meta_title',
+        'meta_description',
+        'meta_keywords'
     ];
 
     /**
@@ -33,12 +50,21 @@ class VendorProduct extends Model
      */
     protected $casts = [
         'price' => 'decimal:2',
-        'stock_quantity' => 'integer',
-        'min_sale_quantity' => 'integer',
-        'max_sale_quantity' => 'integer',
+        'compare_price' => 'decimal:2',
+        'cost' => 'decimal:2',
+        'quantity' => 'integer',
+        'min_quantity' => 'integer',
+        'max_quantity' => 'integer',
+        'commission_rate' => 'decimal:2',
         'discount' => 'array',
         'images' => 'array',
-        'status' => 'boolean',
+        'is_active' => 'boolean',
+        'is_featured' => 'boolean',
+        'is_digital' => 'boolean',
+        'is_virtual' => 'boolean',
+        'requires_shipping' => 'boolean',
+        'track_inventory' => 'boolean',
+        'allow_backorders' => 'boolean',
     ];
 
     /**
@@ -46,7 +72,7 @@ class VendorProduct extends Model
      */
     public function product(): BelongsTo
     {
-        return $this->belongsTo(\App\Modules\Products\Models\Product::class, 'relation_id');
+        return $this->belongsTo(\App\Modules\Products\Models\Product::class, 'product_id');
     }
 
     /**
@@ -54,7 +80,7 @@ class VendorProduct extends Model
      */
     public function vendor(): BelongsTo
     {
-        return $this->belongsTo(\App\Modules\Users\Models\User::class, 'user_relation_id');
+        return $this->belongsTo(\App\Modules\Users\Models\User::class, 'vendor_id');
     }
 
     /**
@@ -70,7 +96,7 @@ class VendorProduct extends Model
      */
     public function scopeActive($query)
     {
-        return $query->where('status', true);
+        return $query->where('is_active', true);
     }
 
     /**
@@ -78,7 +104,7 @@ class VendorProduct extends Model
      */
     public function scopeInStock($query)
     {
-        return $query->where('stock_quantity', '>', 0);
+        return $query->where('quantity', '>', 0);
     }
 
     /**
@@ -141,13 +167,13 @@ class VendorProduct extends Model
     {
         switch ($operation) {
             case 'increment':
-                $this->stock_quantity += $quantity;
+                $this->quantity += $quantity;
                 break;
             case 'decrement':
-                $this->stock_quantity = max(0, $this->stock_quantity - $quantity);
+                $this->quantity = max(0, $this->quantity - $quantity);
                 break;
             default:
-                $this->stock_quantity = max(0, $quantity);
+                $this->quantity = max(0, $quantity);
         }
 
         $this->save();
@@ -158,7 +184,7 @@ class VendorProduct extends Model
      */
     public function isInStock(): bool
     {
-        return $this->stock_quantity > 0;
+        return $this->quantity > 0;
     }
 
     /**
