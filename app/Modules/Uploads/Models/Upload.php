@@ -15,12 +15,17 @@ class Upload extends Model
     protected $fillable = [
         'name',
         'type',
+        'file_type',
+        'extension',
         'relation_id',
         'url',
         'file_name',
         'file_path',
+        'thumbnail_path',
         'mime_type',
         'file_size',
+        'size',
+        'metadata',
         'order',
         'status',
     ];
@@ -33,8 +38,10 @@ class Upload extends Model
     protected $casts = [
         'relation_id' => 'integer',
         'file_size' => 'integer',
+        'size' => 'integer',
         'order' => 'integer',
         'status' => 'boolean',
+        'metadata' => 'array',
     ];
 
     /**
@@ -43,9 +50,14 @@ class Upload extends Model
     protected static function booted()
     {
         static::deleting(function ($upload) {
-            // Dosyayı diskten sil
-            if ($upload->file_path && Storage::exists($upload->file_path)) {
-                Storage::delete($upload->file_path);
+            // Ana dosyayı diskten sil
+            if ($upload->file_path && Storage::disk('public')->exists($upload->file_path)) {
+                Storage::disk('public')->delete($upload->file_path);
+            }
+            
+            // Thumbnail varsa onu da sil
+            if ($upload->thumbnail_path && Storage::disk('public')->exists($upload->thumbnail_path)) {
+                Storage::disk('public')->delete($upload->thumbnail_path);
             }
         });
     }
@@ -91,6 +103,9 @@ class Upload extends Model
      */
     public function getExtensionAttribute()
     {
+        if ($this->attributes['extension'] ?? null) {
+            return $this->attributes['extension'];
+        }
         return pathinfo($this->file_name, PATHINFO_EXTENSION);
     }
 
@@ -142,10 +157,10 @@ class Upload extends Model
      */
     public function getHumanFileSizeAttribute()
     {
-        $bytes = $this->file_size;
+        $bytes = $this->size ?? $this->file_size ?? 0;
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
 
-        for ($i = 0; $bytes > 1024; $i++) {
+        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
             $bytes /= 1024;
         }
 
@@ -153,17 +168,28 @@ class Upload extends Model
     }
 
     /**
-     * Generate thumbnail URL if image.
+     * Get thumbnail URL if exists.
      */
-    public function getThumbnailUrl($width = 150, $height = 150)
+    public function getThumbnailUrlAttribute()
     {
         if (!$this->isImage()) {
             return null;
         }
 
-        // Burada thumbnail oluşturma mantığı eklenebilir
-        // Şimdilik orijinal URL'i döndürüyoruz
+        if ($this->thumbnail_path) {
+            return asset('storage/' . $this->thumbnail_path);
+        }
+
+        // Thumbnail yoksa orijinal URL'i döndür
         return $this->full_url;
+    }
+    
+    /**
+     * Generate thumbnail URL if image.
+     */
+    public function getThumbnailUrl($width = 150, $height = 150)
+    {
+        return $this->thumbnail_url ?? $this->full_url;
     }
 
     /**

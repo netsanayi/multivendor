@@ -17,7 +17,7 @@ class VendorProductController extends Controller
      */
     public function index(Request $request)
     {
-        $query = VendorProduct::with(['product', 'user', 'currency']);
+        $query = VendorProduct::with(['product', 'vendor', 'currency']);
 
         // Arama
         if ($request->has('search')) {
@@ -149,7 +149,7 @@ class VendorProductController extends Controller
      */
     public function show(VendorProduct $vendorProduct)
     {
-        $vendorProduct->load(['product', 'user', 'currency', 'media']);
+        $vendorProduct->load(['product', 'vendor', 'currency']);
         
         return view('vendor-products.show', compact('vendorProduct'));
     }

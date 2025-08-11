@@ -51,6 +51,8 @@ Route::prefix('admin')
             ->name('products.approve');
         Route::post('products/{product}/reject', [\App\Modules\Products\Controllers\ProductController::class, 'reject'])
             ->name('products.reject');
+        Route::delete('products/{product}/remove-image', [\App\Modules\Products\Controllers\ProductController::class, 'removeImage'])
+            ->name('products.remove-image');
         
         // Vendor Products
         Route::resource('vendor-products', \App\Modules\VendorProducts\Controllers\VendorProductController::class);
@@ -94,10 +96,12 @@ Route::prefix('admin')
         Route::resource('banners', \App\Modules\Banners\Controllers\BannerController::class);
         
         // Activity Log
-        Route::get('activity-log', [\App\Modules\ActivityLog\Controllers\ActivityLogController::class, 'index'])
-            ->name('activity-log.index');
-        Route::get('activity-log/{activity}', [\App\Modules\ActivityLog\Controllers\ActivityLogController::class, 'show'])
-            ->name('activity-log.show');
+        Route::prefix('activity-log')->name('activity-log.')->group(function () {
+            Route::get('/', [\App\Modules\ActivityLog\Controllers\ActivityLogController::class, 'index'])->name('index');
+            Route::get('/export', [\App\Modules\ActivityLog\Controllers\ActivityLogController::class, 'export'])->name('export');
+            Route::post('/clear', [\App\Modules\ActivityLog\Controllers\ActivityLogController::class, 'clear'])->name('clear');
+            Route::get('/{activity}', [\App\Modules\ActivityLog\Controllers\ActivityLogController::class, 'show'])->name('show');
+        });
         
         // Settings
         Route::get('settings', [\App\Modules\Settings\Controllers\SettingController::class, 'index'])
@@ -105,11 +109,40 @@ Route::prefix('admin')
         Route::post('settings', [\App\Modules\Settings\Controllers\SettingController::class, 'update'])
             ->name('settings.update');
         
+        // Image Upload Route
+        Route::post('upload/image', function(\Illuminate\Http\Request $request) {
+            if ($request->hasFile('file')) {
+                $file = $request->file('file');
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $file->move(public_path('uploads/blog'), $filename);
+                return response()->json(['location' => '/uploads/blog/' . $filename]);
+            }
+            return response()->json(['error' => 'No file uploaded'], 400);
+        })->name('upload.image');
+        
         // Uploads (AJAX)
         Route::post('uploads', [\App\Modules\Uploads\Controllers\UploadController::class, 'store'])
             ->name('uploads.store');
         Route::delete('uploads/{upload}', [\App\Modules\Uploads\Controllers\UploadController::class, 'destroy'])
-            ->name('uploads.destroy');
+            ->name('uploads.destroy');	
+			
+        // Admin routes içine eklenecek
+        Route::resource('orders', \App\Http\Controllers\Admin\OrderController::class);
+        
+        // Vendor Management
+        Route::prefix('vendors')->name('vendors.')->group(function () {
+            Route::get('/list', [\App\Http\Controllers\Admin\VendorManagementController::class, 'index'])->name('list');
+            Route::get('/applications', [\App\Http\Controllers\Admin\VendorManagementController::class, 'applications'])->name('applications');
+            Route::get('/{vendor}', [\App\Http\Controllers\Admin\VendorManagementController::class, 'show'])->name('show');
+            Route::post('/{vendor}/approve', [\App\Http\Controllers\Admin\VendorManagementController::class, 'approve'])->name('approve');
+            Route::post('/{vendor}/reject', [\App\Http\Controllers\Admin\VendorManagementController::class, 'reject'])->name('reject');
+            Route::post('/{vendor}/suspend', [\App\Http\Controllers\Admin\VendorManagementController::class, 'suspend'])->name('suspend');
+            Route::post('/{vendor}/activate', [\App\Http\Controllers\Admin\VendorManagementController::class, 'activate'])->name('activate');
+            Route::post('/{vendor}/commission', [\App\Http\Controllers\Admin\VendorManagementController::class, 'updateCommission'])->name('update-commission');
+        });
+        
+        Route::get('commissions', [\App\Http\Controllers\Admin\CommissionController::class, 'index'])->name('commissions.index');
+        Route::get('payments', [\App\Http\Controllers\Admin\PaymentController::class, 'index'])->name('payments.index');			
     });
 
 // Vendor Panel Routes
@@ -183,26 +216,26 @@ Route::name('frontend.')
     ->group(function () {
         
         // Categories
-        Route::get('category/{category:slug}', [\App\Modules\Categories\Controllers\Frontend\CategoryController::class, 'show'])
-            ->name('categories.show');
+        // Route::get('category/{category:slug}', [\App\Modules\Categories\Controllers\Frontend\CategoryController::class, 'show'])
+        //     ->name('categories.show');
         
         // Products
-        Route::get('product/{product:slug}', [\App\Modules\Products\Controllers\Frontend\ProductController::class, 'show'])
-            ->name('products.show');
+        // Route::get('product/{product:slug}', [\App\Modules\Products\Controllers\Frontend\ProductController::class, 'show'])
+        //     ->name('products.show');
         
         // Brands
-        Route::get('brand/{brand:slug}', [\App\Modules\Brands\Controllers\Frontend\BrandController::class, 'show'])
-            ->name('brands.show');
+        // Route::get('brand/{brand:slug}', [\App\Modules\Brands\Controllers\Frontend\BrandController::class, 'show'])
+        //     ->name('brands.show');
         
         // Blogs
-        Route::get('blog', [\App\Modules\Blogs\Controllers\Frontend\BlogController::class, 'index'])
-            ->name('blogs.index');
-        Route::get('blog/{blog:slug}', [\App\Modules\Blogs\Controllers\Frontend\BlogController::class, 'show'])
-            ->name('blogs.show');
+        // Route::get('blog', [\App\Modules\Blogs\Controllers\Frontend\BlogController::class, 'index'])
+        //     ->name('blogs.index');
+        // Route::get('blog/{blog:slug}', [\App\Modules\Blogs\Controllers\Frontend\BlogController::class, 'show'])
+        //     ->name('blogs.show');
         
         // Search
-        Route::get('search', [\App\Modules\Products\Controllers\Frontend\SearchController::class, 'index'])
-            ->name('search');
+        // Route::get('search', [\App\Modules\Products\Controllers\Frontend\SearchController::class, 'index'])
+        //     ->name('search');
         
         // Cart (gelecekte eklenecek)
         // Route::get('cart', [\App\Modules\Cart\Controllers\CartController::class, 'index'])
@@ -229,3 +262,60 @@ Route::get('currency/{code}', function ($code) {
     
     return redirect()->back();
 })->name('currency.switch');
+
+// Ticket/Support System Routes
+Route::middleware(['auth'])
+    ->prefix('tickets')
+    ->name('tickets.')
+    ->group(function () {
+        Route::get('/', [\App\Modules\Tickets\Controllers\TicketController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Modules\Tickets\Controllers\TicketController::class, 'create'])->name('create');
+        Route::post('/', [\App\Modules\Tickets\Controllers\TicketController::class, 'store'])->name('store');
+        Route::get('/{ticket}', [\App\Modules\Tickets\Controllers\TicketController::class, 'show'])->name('show');
+        Route::post('/{ticket}/respond', [\App\Modules\Tickets\Controllers\TicketController::class, 'respond'])->name('respond');
+        Route::post('/{ticket}/close', [\App\Modules\Tickets\Controllers\TicketController::class, 'close'])->name('close');
+        Route::post('/{ticket}/reopen', [\App\Modules\Tickets\Controllers\TicketController::class, 'reopen'])->name('reopen');
+        Route::post('/{ticket}/rate', [\App\Modules\Tickets\Controllers\TicketController::class, 'rate'])->name('rate');
+    });
+
+// Messaging System Routes
+Route::middleware(['auth'])
+    ->prefix('messages')
+    ->name('messages.')
+    ->group(function () {
+        Route::get('/', [\App\Modules\Messages\Controllers\MessageController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Modules\Messages\Controllers\MessageController::class, 'create'])->name('create');
+        Route::post('/', [\App\Modules\Messages\Controllers\MessageController::class, 'store'])->name('store');
+        Route::get('/blocked', [\App\Modules\Messages\Controllers\MessageController::class, 'blockedUsers'])->name('blocked');
+        Route::get('/{thread}', [\App\Modules\Messages\Controllers\MessageController::class, 'show'])->name('show');
+        Route::post('/{thread}/send', [\App\Modules\Messages\Controllers\MessageController::class, 'send'])->name('send');
+        Route::post('/{thread}/star', [\App\Modules\Messages\Controllers\MessageController::class, 'toggleStar'])->name('star');
+        Route::post('/{thread}/mute', [\App\Modules\Messages\Controllers\MessageController::class, 'toggleMute'])->name('mute');
+        Route::post('/{thread}/archive', [\App\Modules\Messages\Controllers\MessageController::class, 'archive'])->name('archive');
+        Route::post('/{thread}/leave', [\App\Modules\Messages\Controllers\MessageController::class, 'leave'])->name('leave');
+        Route::post('/{thread}/offer/{message}/accept', [\App\Modules\Messages\Controllers\MessageController::class, 'acceptOffer'])->name('offer.accept');
+        Route::post('/{thread}/offer/{message}/reject', [\App\Modules\Messages\Controllers\MessageController::class, 'rejectOffer'])->name('offer.reject');
+        Route::post('/block', [\App\Modules\Messages\Controllers\MessageController::class, 'blockUser'])->name('block');
+        Route::post('/unblock', [\App\Modules\Messages\Controllers\MessageController::class, 'unblockUser'])->name('unblock');
+    });
+
+// Notification System Routes
+Route::middleware(['auth'])
+    ->prefix('notifications')
+    ->name('notifications.')
+    ->group(function () {
+        Route::get('/', [\App\Modules\Notifications\Controllers\NotificationController::class, 'index'])->name('index');
+        Route::get('/settings', [\App\Modules\Notifications\Controllers\NotificationController::class, 'settings'])->name('settings');
+        Route::post('/settings', [\App\Modules\Notifications\Controllers\NotificationController::class, 'updateSettings'])->name('settings.update');
+        Route::post('/{id}/read', [\App\Modules\Notifications\Controllers\NotificationController::class, 'markAsRead'])->name('read');
+        Route::post('/read-all', [\App\Modules\Notifications\Controllers\NotificationController::class, 'markAllAsRead'])->name('read-all');
+        Route::delete('/{id}', [\App\Modules\Notifications\Controllers\NotificationController::class, 'destroy'])->name('destroy');
+        Route::post('/clear', [\App\Modules\Notifications\Controllers\NotificationController::class, 'clear'])->name('clear');
+        Route::post('/push/register', [\App\Modules\Notifications\Controllers\NotificationController::class, 'registerPushToken'])->name('push.register');
+        Route::post('/push/unregister', [\App\Modules\Notifications\Controllers\NotificationController::class, 'unregisterPushToken'])->name('push.unregister');
+        Route::post('/test', [\App\Modules\Notifications\Controllers\NotificationController::class, 'test'])->name('test');
+        
+        // AJAX endpoints
+        Route::get('/unread-count', [\App\Modules\Notifications\Controllers\NotificationController::class, 'unreadCount'])->name('unread-count');
+        Route::get('/recent', [\App\Modules\Notifications\Controllers\NotificationController::class, 'recent'])->name('recent');
+    });

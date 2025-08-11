@@ -10,6 +10,8 @@ use App\Modules\Currencies\Models\Currency;
 use App\Modules\ProductAttributes\Models\ProductAttribute;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Modules\Uploads\Models\Upload;
+use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
@@ -124,8 +126,8 @@ class ProductController extends Controller
             $validated['tags'] = array_map('trim', explode(',', $validated['tags']));
         }
 
-        // Approval status'ü belirle (admin ise otomatik onaylı)
-        $validated['approval_status'] = auth()->user()->hasRole('admin') ? 'approved' : 'pending';
+        // Admin panelde oluşturulan ürünleri varsayılan olarak onaylı işaretle
+        $validated['approval_status'] = 'approved';
 
         DB::beginTransaction();
         try {
@@ -134,7 +136,7 @@ class ProductController extends Controller
             // Log aktiviteyi kaydet
             activity()
                 ->performedOn($product)
-                ->causedBy(auth()->user())
+                ->causedBy(Auth::user())
                 ->withProperties(['attributes' => $product->toArray()])
                 ->log('Ürün oluşturuldu');
 
@@ -220,7 +222,7 @@ class ProductController extends Controller
             // Log aktiviteyi kaydet
             activity()
                 ->performedOn($product)
-                ->causedBy(auth()->user())
+                ->causedBy(Auth::user())
                 ->withProperties([
                     'old' => $oldAttributes,
                     'attributes' => $product->toArray()
@@ -258,7 +260,7 @@ class ProductController extends Controller
             // Log aktiviteyi kaydet
             activity()
                 ->performedOn($product)
-                ->causedBy(auth()->user())
+                ->causedBy(Auth::user())
                 ->withProperties(['attributes' => $product->toArray()])
                 ->log('Ürün silindi');
 
@@ -296,7 +298,7 @@ class ProductController extends Controller
             // Log aktiviteyi kaydet
             activity()
                 ->performedOn($product)
-                ->causedBy(auth()->user())
+                ->causedBy(Auth::user())
                 ->log('Ürün onaylandı');
 
             DB::commit();
@@ -331,7 +333,7 @@ class ProductController extends Controller
             // Log aktiviteyi kaydet
             activity()
                 ->performedOn($product)
-                ->causedBy(auth()->user())
+                ->causedBy(Auth::user())
                 ->withProperties(['reason' => $request->get('reason')])
                 ->log('Ürün onayı reddedildi');
 
@@ -370,6 +372,72 @@ class ProductController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Stok güncellenirken bir hata oluştu.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Remove an image from product gallery via AJAX.
+     */
+    public function removeImage(Request $request, Product $product)
+    {
+        $validated = $request->validate([
+            'index' => 'required|integer|min:0',
+        ]);
+
+        $images = $product->images ?? [];
+        $index = (int) $validated['index'];
+
+        if ($index < 0 || $index >= count($images)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Geçersiz resim indeksi.'
+            ], 422);
+        }
+
+        // Remove the image from array and reindex
+        $removed = array_splice($images, $index, 1);
+        $removedItem = $removed[0] ?? null;
+        $product->images = array_values($images);
+
+        try {
+            DB::beginTransaction();
+            $product->save();
+
+            // If removed item refers to an Upload owned by this product, delete it
+            if ($removedItem) {
+                // if it's numeric or numeric string, try by id
+                $upload = null;
+                if (is_int($removedItem) || ctype_digit((string) $removedItem)) {
+                    $upload = Upload::find((int) $removedItem);
+                } else if (is_string($removedItem)) {
+                    // try to find by URL
+                    $upload = Upload::where('url', $removedItem)->first();
+                }
+
+                if ($upload && ($upload->type === 'Ürün') && ($upload->relation_id == $product->id)) {
+                    $upload->delete();
+                }
+            }
+
+            // Log aktivite
+            activity()
+                ->performedOn($product)
+                ->causedBy(Auth::user())
+                ->withProperties(['removed_image' => $removedItem])
+                ->log('Ürün görseli kaldırıldı');
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Resim kaldırıldı.'
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Resim kaldırılırken bir hata oluştu.'
             ], 500);
         }
     }

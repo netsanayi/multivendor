@@ -53,6 +53,10 @@ class RouteServiceProvider extends ServiceProvider
         Route::bind('attributeCategory', function ($value) {
             return \App\Modules\AttributeCategories\Models\AttributeCategory::findOrFail($value);
         });
+        
+        Route::bind('activity', function ($value) {
+            return \Spatie\Activitylog\Models\Activity::findOrFail($value);
+        });
 
         // Route patterns
         Route::pattern('id', '[0-9]+');

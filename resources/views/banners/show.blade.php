@@ -24,8 +24,15 @@
                                     <h5 class="mb-0">Banner Görseli</h5>
                                 </div>
                                 <div class="card-body text-center">
-                                    <img src="{{ $banner->image->url }}" alt="{{ $banner->name }}" 
-                                         class="img-fluid" style="max-height: 400px;">
+                                    @if($banner->image)
+                                        <img src="{{ $banner->image->url }}" alt="{{ $banner->name }}" 
+                                             class="img-fluid" style="max-height: 400px;">
+                                    @else
+                                        <div class="text-muted py-5">
+                                            <i class="fas fa-image fa-3x mb-3"></i>
+                                            <p>Görsel bulunamadı</p>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>

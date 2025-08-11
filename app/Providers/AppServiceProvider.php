@@ -12,7 +12,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // User model alias
+        $this->app->alias(\App\Modules\Users\Models\User::class, \App\Models\User::class);
     }
 
     /**

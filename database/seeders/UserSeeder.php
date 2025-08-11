@@ -3,8 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Modules\Users\Models\User;
-use App\Modules\Currencies\Models\Currency;
+use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
@@ -14,106 +13,122 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        $defaultCurrency = Currency::where('code', 'TRY')->first();
+        // Create Super Admin
+        $superAdmin = User::firstOrCreate(
+            ['email' => 'superadmin@example.com'],
+            [
+                'name' => 'Super Admin',
+                'first_name' => 'Super',
+                'last_name' => 'Admin',
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+                'status' => true,
+                'phone_number' => '+90 555 111 1111',
+            ]
+        );
+        $superAdmin->assignRole('super-admin');
 
-        // Admin kullanıcı
+        // Create Admin
         $admin = User::firstOrCreate(
             ['email' => 'admin@example.com'],
             [
+                'name' => 'Admin User',
                 'first_name' => 'Admin',
                 'last_name' => 'User',
-                'phone_number' => '+905551234567',
                 'password' => Hash::make('password'),
-                'default_currency_id' => $defaultCurrency->id,
-                'status' => true,
                 'email_verified_at' => now(),
+                'status' => true,
+                'phone_number' => '+90 555 222 2222',
             ]
         );
         $admin->assignRole('admin');
 
-        // Satıcı kullanıcılar
-        for ($i = 1; $i <= 3; $i++) {
-            $vendor = User::firstOrCreate(
-                ['email' => "vendor{$i}@example.com"],
-                [
-                    'first_name' => "Satıcı",
-                    'last_name' => "{$i}",
-                    'phone_number' => "+90555123456{$i}",
-                    'password' => Hash::make('password'),
-                    'default_currency_id' => $defaultCurrency->id,
-                    'status' => true,
-                    'email_verified_at' => now(),
-                ]
-            );
-            $vendor->assignRole('vendor');
-
-            // Her satıcıya adres ekle
-            $vendor->addresses()->create([
-                'address_name' => 'İşyeri',
-                'city' => 'İstanbul',
-                'district' => 'Kadıköy',
-                'street' => 'Bağdat Caddesi',
-                'road_name' => 'Şaşkınbakkal Mahallesi',
-                'building_no' => (string)($i * 10),
-                'floor' => (string)$i,
-                'door_no' => (string)($i * 2),
-                'company_type' => 'corporate',
-                'company_name' => "Satıcı {$i} Ltd. Şti.",
-                'tax_office' => 'Kadıköy Vergi Dairesi',
-                'tax_no' => "123456789{$i}",
-                'is_default' => true,
-                'status' => true,
-            ]);
-        }
-
-        // Müşteri kullanıcılar
-        for ($i = 1; $i <= 5; $i++) {
-            $customer = User::firstOrCreate(
-                ['email' => "customer{$i}@example.com"],
-                [
-                    'first_name' => "Müşteri",
-                    'last_name' => "{$i}",
-                    'phone_number' => "+90555987654{$i}",
-                    'password' => Hash::make('password'),
-                    'default_currency_id' => $defaultCurrency->id,
-                    'status' => true,
-                    'email_verified_at' => now(),
-                ]
-            );
-            $customer->assignRole('customer');
-
-            // Her müşteriye adres ekle
-            $customer->addresses()->create([
-                'address_name' => 'Ev',
-                'city' => 'İstanbul',
-                'district' => 'Beşiktaş',
-                'street' => 'Barbaros Bulvarı',
-                'road_name' => 'Yıldız Mahallesi',
-                'building_no' => (string)($i * 5),
-                'floor' => (string)($i + 1),
-                'door_no' => (string)($i * 3),
-                'company_type' => 'individual',
-                'tc_id_no' => "1234567890{$i}",
-                'is_default' => true,
-                'status' => true,
-            ]);
-        }
-
-        // Editor kullanıcı
-        $editor = User::firstOrCreate(
-            ['email' => 'editor@example.com'],
+        // Create Vendors
+        $vendor1 = User::firstOrCreate(
+            ['email' => 'vendor1@example.com'],
             [
-                'first_name' => 'Editor',
-                'last_name' => 'User',
-                'phone_number' => '+905559999999',
+                'name' => 'John Vendor',
+                'first_name' => 'John',
+                'last_name' => 'Vendor',
                 'password' => Hash::make('password'),
-                'default_currency_id' => $defaultCurrency->id,
-                'status' => true,
                 'email_verified_at' => now(),
+                'status' => true,
+                'phone_number' => '+90 555 333 3333',
             ]
         );
-        $editor->assignRole('editor');
+        $vendor1->assignRole('vendor');
 
-        $this->command->info('Kullanıcılar oluşturuldu.');
+        $vendor2 = User::firstOrCreate(
+            ['email' => 'vendor2@example.com'],
+            [
+                'name' => 'Jane Seller',
+                'first_name' => 'Jane',
+                'last_name' => 'Seller',
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+                'status' => true,
+                'phone_number' => '+90 555 444 4444',
+            ]
+        );
+        $vendor2->assignRole('vendor');
+
+        // Create Customers
+        $customer1 = User::firstOrCreate(
+            ['email' => 'customer1@example.com'],
+            [
+                'name' => 'Alice Customer',
+                'first_name' => 'Alice',
+                'last_name' => 'Customer',
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+                'status' => true,
+                'phone_number' => '+90 555 555 5555',
+            ]
+        );
+        $customer1->assignRole('customer');
+
+        $customer2 = User::firstOrCreate(
+            ['email' => 'customer2@example.com'],
+            [
+                'name' => 'Bob Buyer',
+                'first_name' => 'Bob',
+                'last_name' => 'Buyer',
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+                'status' => true,
+                'phone_number' => '+90 555 666 6666',
+            ]
+        );
+        $customer2->assignRole('customer');
+
+        // Create test customer
+        $testCustomer = User::firstOrCreate(
+            ['email' => 'test@example.com'],
+            [
+                'name' => 'Test User',
+                'first_name' => 'Test',
+                'last_name' => 'User',
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+                'status' => true,
+                'phone_number' => '+90 555 777 7777',
+            ]
+        );
+        $testCustomer->assignRole('customer');
+
+        $this->command->info('Users created successfully!');
+        $this->command->table(
+            ['Email', 'Name', 'Role'],
+            [
+                ['superadmin@example.com', 'Super Admin', 'super-admin'],
+                ['admin@example.com', 'Admin User', 'admin'],
+                ['vendor1@example.com', 'John Vendor', 'vendor'],
+                ['vendor2@example.com', 'Jane Seller', 'vendor'],
+                ['customer1@example.com', 'Alice Customer', 'customer'],
+                ['customer2@example.com', 'Bob Buyer', 'customer'],
+                ['test@example.com', 'Test User', 'customer'],
+            ]
+        );
+        $this->command->info('Default password for all users: password');
     }
 }

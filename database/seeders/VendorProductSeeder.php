@@ -31,6 +31,15 @@ class VendorProductSeeder extends Seeder
             $selectedProducts = $products->random(min($productCount, $products->count()));
             
             foreach ($selectedProducts as $product) {
+                // Bu ürün-satıcı kombinasyonu zaten var mı kontrol et
+                $existingVendorProduct = VendorProduct::where('relation_id', $product->id)
+                    ->where('user_relation_id', $vendor->id)
+                    ->first();
+                
+                if ($existingVendorProduct) {
+                    continue; // Zaten varsa atla
+                }
+                
                 // Satıcıya göre fiyat ayarlaması yap
                 $priceMultiplier = 1 + (($index % 3) * 0.05); // %0, %5 veya %10 fark
                 $vendorPrice = $product->default_price * $priceMultiplier;
@@ -69,17 +78,25 @@ class VendorProductSeeder extends Seeder
             // Bazı satıcılar USD ile de satış yapsın
             if ($index % 2 == 0 && $usdCurrency) {
                 $usdProduct = $products->random();
-                VendorProduct::create([
-                    'relation_id' => $usdProduct->id,
-                    'user_relation_id' => $vendor->id,
-                    'price' => round($usdProduct->default_price / $usdCurrency->exchange_rate, 2),
-                    'currency_id' => $usdCurrency->id,
-                    'condition' => $usdProduct->condition,
-                    'stock_quantity' => rand(5, 20),
-                    'min_sale_quantity' => 1,
-                    'max_sale_quantity' => 3,
-                    'status' => true,
-                ]);
+                
+                // Bu ürün-satıcı kombinasyonu zaten var mı kontrol et (USD için)
+                $existingUsdVendorProduct = VendorProduct::where('relation_id', $usdProduct->id)
+                    ->where('user_relation_id', $vendor->id)
+                    ->first();
+                
+                if (!$existingUsdVendorProduct) {
+                    VendorProduct::create([
+                        'relation_id' => $usdProduct->id,
+                        'user_relation_id' => $vendor->id,
+                        'price' => round($usdProduct->default_price / $usdCurrency->exchange_rate, 2),
+                        'currency_id' => $usdCurrency->id,
+                        'condition' => $usdProduct->condition,
+                        'stock_quantity' => rand(5, 20),
+                        'min_sale_quantity' => 1,
+                        'max_sale_quantity' => 3,
+                        'status' => true,
+                    ]);
+                }
             }
         }
         

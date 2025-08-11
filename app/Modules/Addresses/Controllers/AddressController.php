@@ -4,7 +4,7 @@ namespace App\Modules\Addresses\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Addresses\Models\Address;
-use App\Models\User;
+use App\Modules\Users\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -13,25 +13,44 @@ class AddressController extends Controller
     /**
      * Display a listing of the resource for a specific user.
      */
-    public function index(User $user)
+    public function index(Request $request)
     {
-        $addresses = $user->addresses()->orderBy('created_at', 'desc')->get();
+        $query = Address::with('user');
         
-        return view('addresses.index', compact('user', 'addresses'));
+        // Search filter
+        if ($request->has('search')) {
+            $search = $request->get('search');
+            $query->where(function($q) use ($search) {
+                $q->where('address_name', 'like', "%{$search}%")
+                  ->orWhere('city', 'like', "%{$search}%")
+                  ->orWhere('district', 'like', "%{$search}%")
+                  ->orWhere('street', 'like', "%{$search}%");
+            });
+        }
+        
+        // User filter
+        if ($request->has('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+        
+        $addresses = $query->orderBy('created_at', 'desc')->paginate(20);
+        
+        return view('addresses.index', compact('addresses'));
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create(User $user)
+    public function create()
     {
-        return view('addresses.create', compact('user'));
+        $users = User::orderBy('name')->get();
+        return view('addresses.create', compact('users'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request, User $user)
+    public function store(Request $request)
     {
         $validated = $request->validate([
             'address_name' => 'required|string|max:255',
@@ -50,7 +69,7 @@ class AddressController extends Controller
             'status' => 'required|boolean',
         ]);
 
-        $validated['user_id'] = $user->id;
+        $validated['user_id'] = $request->user_id ?? auth()->id();
 
         DB::beginTransaction();
         try {
@@ -66,7 +85,7 @@ class AddressController extends Controller
             DB::commit();
 
             return redirect()
-                ->route('admin.users.addresses.index', $user)
+                ->route('admin.addresses.index')
                 ->with('success', 'Adres başarıyla oluşturuldu.');
         } catch (\Exception $e) {
             DB::rollback();
@@ -80,37 +99,29 @@ class AddressController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(User $user, Address $address)
+    public function show(Address $address)
     {
-        // Adresin kullanıcıya ait olduğunu kontrol et
-        if ($address->user_id !== $user->id) {
-            abort(404);
-        }
-
-        return view('addresses.show', compact('user', 'address'));
+        $address->load('user');
+        return view('addresses.show', compact('address'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(User $user, Address $address)
+    public function edit(Address $address)
     {
-        // Adresin kullanıcıya ait olduğunu kontrol et
-        if ($address->user_id !== $user->id) {
-            abort(404);
-        }
-
-        return view('addresses.edit', compact('user', 'address'));
+        $users = User::orderBy('name')->get();
+        return view('addresses.edit', compact('address', 'users'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, User $user, Address $address)
+    public function update(Request $request, Address $address)
     {
-        // Adresin kullanıcıya ait olduğunu kontrol et
-        if ($address->user_id !== $user->id) {
-            abort(404);
+        // Kullanıcı ID güncelleme kontrolü
+        if ($request->has('user_id') && auth()->user()->can('addresses.update')) {
+            $validated['user_id'] = $request->user_id;
         }
 
         $validated = $request->validate([
@@ -148,7 +159,7 @@ class AddressController extends Controller
             DB::commit();
 
             return redirect()
-                ->route('admin.users.addresses.index', $user)
+                ->route('admin.addresses.index')
                 ->with('success', 'Adres başarıyla güncellendi.');
         } catch (\Exception $e) {
             DB::rollback();
@@ -162,12 +173,8 @@ class AddressController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(User $user, Address $address)
+    public function destroy(Address $address)
     {
-        // Adresin kullanıcıya ait olduğunu kontrol et
-        if ($address->user_id !== $user->id) {
-            abort(404);
-        }
 
         DB::beginTransaction();
         try {
@@ -183,7 +190,7 @@ class AddressController extends Controller
             DB::commit();
 
             return redirect()
-                ->route('admin.users.addresses.index', $user)
+                ->route('admin.addresses.index')
                 ->with('success', 'Adres başarıyla silindi.');
         } catch (\Exception $e) {
             DB::rollback();

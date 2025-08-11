@@ -16,152 +16,162 @@ class RoleSeeder extends Seeder
         // Reset cached roles and permissions
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Create permissions
+        // Create roles
+        $superAdmin = Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+        $admin = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $vendor = Role::firstOrCreate(['name' => 'vendor', 'guard_name' => 'web']);
+        $customer = Role::firstOrCreate(['name' => 'customer', 'guard_name' => 'web']);
+
+        // Define permissions
         $permissions = [
-            // Kategori izinleri
-            'categories.view',
-            'categories.create',
-            'categories.edit',
-            'categories.delete',
+            // User management
+            'users.view',
+            'users.create',
+            'users.edit',
+            'users.delete',
             
-            // Ürün izinleri
+            // Role management
+            'roles.view',
+            'roles.create',
+            'roles.edit',
+            'roles.delete',
+            
+            // Product management
             'products.view',
             'products.create',
             'products.edit',
             'products.delete',
             'products.approve',
             
-            // Satıcı ürün izinleri
-            'vendor-products.view',
-            'vendor-products.create',
-            'vendor-products.edit',
-            'vendor-products.delete',
+            // Category management
+            'categories.view',
+            'categories.create',
+            'categories.edit',
+            'categories.delete',
             
-            // Marka izinleri
+            // Brand management
             'brands.view',
             'brands.create',
             'brands.edit',
             'brands.delete',
             
-            // Özellik izinleri
-            'attributes.view',
-            'attributes.create',
-            'attributes.edit',
-            'attributes.delete',
+            // Order management
+            'orders.view',
+            'orders.create',
+            'orders.edit',
+            'orders.delete',
+            'orders.process',
             
-            // Kullanıcı izinleri
-            'users.view',
-            'users.create',
-            'users.edit',
-            'users.delete',
+            // Vendor management
+            'vendors.view',
+            'vendors.create',
+            'vendors.edit',
+            'vendors.delete',
+            'vendors.approve',
             
-            // Rol izinleri
-            'roles.view',
-            'roles.create',
-            'roles.edit',
-            'roles.delete',
-            
-            // Blog izinleri
-            'blogs.view',
-            'blogs.create',
-            'blogs.edit',
-            'blogs.delete',
-            
-            // Banner izinleri
-            'banners.view',
-            'banners.create',
-            'banners.edit',
-            'banners.delete',
-            
-            // Para birimi izinleri
-            'currencies.view',
-            'currencies.create',
-            'currencies.edit',
-            'currencies.delete',
-            
-            // Dil izinleri
-            'languages.view',
-            'languages.create',
-            'languages.edit',
-            'languages.delete',
-            
-            // Ayar izinleri
+            // Settings
             'settings.view',
             'settings.edit',
             
-            // Aktivite log izinleri
-            'activity-log.view',
+            // Reports
+            'reports.view',
+            'reports.export',
             
-            // Adres izinleri
-            'addresses.view',
-            'addresses.create',
-            'addresses.edit',
-            'addresses.delete',
+            // Dashboard
+            'dashboard.view',
+            'dashboard.vendor',
+            'dashboard.admin',
+            
+            // Tickets
+            'tickets.view',
+            'tickets.create',
+            'tickets.respond',
+            'tickets.manage',
+            
+            // Messages
+            'messages.view',
+            'messages.send',
+            
+            // Wishlists
+            'wishlists.view',
+            'wishlists.create',
+            'wishlists.delete',
         ];
 
+        // Create permissions
         foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
 
-        // Create roles and assign permissions
+        // Assign permissions to roles
         
-        // Admin rolü - tüm izinler
-        $adminRole = Role::firstOrCreate(['name' => 'admin']);
-        $adminRole->givePermissionTo(Permission::all());
-
-        // Vendor (Satıcı) rolü
-        $vendorRole = Role::firstOrCreate(['name' => 'vendor']);
-        $vendorRole->givePermissionTo([
-            'vendor-products.view',
-            'vendor-products.create',
-            'vendor-products.edit',
-            'vendor-products.delete',
-            'products.view',
-            'categories.view',
-            'brands.view',
-            'attributes.view',
-            'addresses.view',
-            'addresses.create',
-            'addresses.edit',
-            'addresses.delete',
-        ]);
-
-        // Customer (Müşteri) rolü
-        $customerRole = Role::firstOrCreate(['name' => 'customer']);
-        $customerRole->givePermissionTo([
-            'products.view',
-            'categories.view',
-            'brands.view',
-            'blogs.view',
-            'addresses.view',
-            'addresses.create',
-            'addresses.edit',
-            'addresses.delete',
-        ]);
-
-        // Editor rolü
-        $editorRole = Role::firstOrCreate(['name' => 'editor']);
-        $editorRole->givePermissionTo([
-            'categories.view',
-            'categories.create',
-            'categories.edit',
+        // Super Admin gets all permissions
+        $superAdmin->givePermissionTo(Permission::all());
+        
+        // Admin gets most permissions except super admin specific ones
+        $admin->givePermissionTo([
+            'users.view',
+            'users.create',
+            'users.edit',
             'products.view',
             'products.create',
             'products.edit',
+            'products.delete',
+            'products.approve',
+            'categories.view',
+            'categories.create',
+            'categories.edit',
+            'categories.delete',
             'brands.view',
             'brands.create',
             'brands.edit',
-            'attributes.view',
-            'attributes.create',
-            'attributes.edit',
-            'blogs.view',
-            'blogs.create',
-            'blogs.edit',
-            'banners.view',
-            'banners.create',
-            'banners.edit',
+            'brands.delete',
+            'orders.view',
+            'orders.edit',
+            'orders.process',
+            'vendors.view',
+            'vendors.edit',
+            'vendors.approve',
+            'settings.view',
+            'reports.view',
+            'reports.export',
+            'dashboard.view',
+            'dashboard.admin',
+            'tickets.view',
+            'tickets.respond',
+            'tickets.manage',
+            'messages.view',
+            'messages.send',
         ]);
-
-        $this->command->info('Roller ve izinler oluşturuldu.');
+        
+        // Vendor permissions
+        $vendor->givePermissionTo([
+            'products.view',
+            'products.create',
+            'products.edit',
+            'orders.view',
+            'dashboard.view',
+            'dashboard.vendor',
+            'reports.view',
+            'tickets.view',
+            'tickets.create',
+            'messages.view',
+            'messages.send',
+        ]);
+        
+        // Customer permissions
+        $customer->givePermissionTo([
+            'products.view',
+            'orders.view',
+            'orders.create',
+            'dashboard.view',
+            'tickets.view',
+            'tickets.create',
+            'messages.view',
+            'messages.send',
+            'wishlists.view',
+            'wishlists.create',
+            'wishlists.delete',
+        ]);
     }
 }
